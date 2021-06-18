@@ -6,7 +6,7 @@
 proj4.defs("SR-ORG:6864", "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 var epsg3857_proj = proj4('EPSG:3857');
 
-// SRS of demographic data (Mass State Plane, NAD 83, meters)
+// SRS of MassGIS data (Mass State Plane, NAD 83, meters)
 proj4.defs("EPSG:26986", "+proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs");
 var epsg26986_proj = proj4('EPSG:26986');
 
@@ -30,6 +30,24 @@ var mgis_basemap_layers = { 'topo_features'     : null,     // bottom layer
                             'parcels'           : null      // unused; not populated
 };
 
+
+// Varioius things for CTPS-hosted WMS and WFS layers
+// First, folderol to allow the app to run on appsrvr3 as well as "in the wild"
+var szServerRoot = location.protocol + '//' + location.hostname;
+var nameSpace;
+if (location.hostname.includes('appsrvr3')) {   
+    szServerRoot += ':8080/geoserver/';  
+	nameSpace = 'ctps_pg';
+} else {
+    szServerRoot += '/maploc/';
+	nameSpace = 'postgis'; 
+}
+var szWMSserverRoot = szServerRoot + '/wms'; 
+var szWFSserverRoot = szServerRoot + '/wfs'; 
+var demographics_layer = nameSpace + ':' + 'CTPS_sample_taz_demographics_epsg3857';
+
+
+
 // Stuff for sketching vector polygon for spatial query
 var source = new ol.source.Vector({wrapX: false});
 
@@ -43,7 +61,53 @@ var vectorDrawingLayer = new ol.layer.Vector({
 function executeTabularQuery(whereClause) {
     console.log('Entered execute spatial query.');
     //
-    // Execute WFS request via AJAX
+    // Submit WFS request via AJAX
+    var cqlFilter = "(town_id='" + value + "10')";      // *** HARDWIRED FOR INITIAL TESTING ***
+	var szUrl = szWFSserverRoot + '?';
+    szUrl += '&service=wfs';
+    szUrl += '&version=1.0.0';
+    szUrl += '&request=getfeature';
+    szUrl += '&typename='+demographics_layer;
+    szUrl += '&outputformat=json';
+    szUrl += '&cql_filter=' + cqlFilter;
+        
+    $.ajax({ url		: szUrl,
+         type		: 'GET',
+         dataType	: 'json',
+         success	: 	function (data, textStatus, jqXHR) {	
+                                var reader, aFeatures = [], props = {}, i, s;
+                                reader = new ol.format.GeoJSON();
+                                aFeatures = reader.readFeatures(jqXHR.responseText);
+                                if (aFeatures.length === 0) {
+                                    alert('WFS request to get data from tabular query returned no features.');
+                                    return;
+                                }
+                                var _DEBUG_HOOK = 0;
+                                // 
+                                // Do stuff...
+                                // props = aFeatures[0].getProperties();
+                                // 
+                                // We center the map on the feature.
+                                // ol_map.getView().fit(aFeatures[0].getGeometry(), ol_map.getSize());
+                                //
+                                // ... and populate output div.
+                                //
+                                $('#output_div').html('');
+                                s = '';
+                                for (i = 0; i < features.length; i++) {
+                                    props = aFeatures[i].getProperties();
+                                    s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
+                                }
+                                $('#output_div').html(s);
+                            },
+        error       :   function (qXHR, textStatus, errorThrown ) {
+                            alert('WFS request to get data from tabular query failed.\n' +
+                                    'Status: ' + textStatus + '\n' +
+                                    'Error:  ' + errorThrown);
+                        } // error handler for WFS request
+    });
+    
+    
     //
     // Upon receipt of response from AJAX request:
             const returned_geojson = new ol.format.GeoJSON();
