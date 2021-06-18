@@ -44,7 +44,7 @@ if (location.hostname.includes('appsrvr3')) {
 }
 var szWMSserverRoot = szServerRoot + '/wms'; 
 var szWFSserverRoot = szServerRoot + '/wfs'; 
-var demographics_layer = nameSpace + ':' + 'CTPS_sample_taz_demographics_epsg3857';
+var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg3857';
 
 
 
@@ -62,7 +62,7 @@ function executeTabularQuery(whereClause) {
     console.log('Entered execute spatial query.');
     //
     // Submit WFS request via AJAX
-    var cqlFilter = "(town_id='" + value + "10')";      // *** HARDWIRED FOR INITIAL TESTING ***
+    var cqlFilter = "(town_id='" +  "10')";      // *** HARDWIRED FOR INITIAL TESTING ***
 	var szUrl = szWFSserverRoot + '?';
     szUrl += '&service=wfs';
     szUrl += '&version=1.0.0';
@@ -70,6 +70,9 @@ function executeTabularQuery(whereClause) {
     szUrl += '&typename='+demographics_layer;
     szUrl += '&outputformat=json';
     szUrl += '&cql_filter=' + cqlFilter;
+    
+    // DEBUG
+    console.log(szUrl);
         
     $.ajax({ url		: szUrl,
          type		: 'GET',
@@ -94,7 +97,7 @@ function executeTabularQuery(whereClause) {
                                 //
                                 $('#output_div').html('');
                                 s = '';
-                                for (i = 0; i < features.length; i++) {
+                                for (i = 0; i < aFeatures.length; i++) {
                                     props = aFeatures[i].getProperties();
                                     s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
                                 }
@@ -106,21 +109,6 @@ function executeTabularQuery(whereClause) {
                                     'Error:  ' + errorThrown);
                         } // error handler for WFS request
     });
-    
-    
-    //
-    // Upon receipt of response from AJAX request:
-            const returned_geojson = new ol.format.GeoJSON();
-            var features = returned_geojson.readFeatures(response);
-            var _DEBUG_HOOK_ = 0;
-            var i, props, s;
-            $('#output_div').html('');
-            s = '';
-            for (i = 0; i < features.length; i++) {
-                props = features[i].getProperties();
-                s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
-            }
-            $('#output_div').html(s)
 } // executeTabularQuery()
 
 // Execute spatial (or at the very least BBOX) query
