@@ -34,26 +34,49 @@ var szWFSserverRoot = szServerRoot + '/wfs';
 var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg3857';
 
 
-// Stuff for sketching vector polygon for spatial query
-var source = new ol.source.Vector({wrapX: false});
-// Vector layer to draw TAZes on the map.
+// Vector layer for sketching spatial query polygon
+var vectorDrawingLayer = new ol.layer.Vector({ source:  new ol.source.Vector({wrapX: false}) });
+
+// Vector layer for rendering TAZes
 // Needs to be visible to initialize() and renderTazData() functions:
-var vectorDrawingLayer = new ol.layer.Vector({
-  source: source,
-});
+var oTazLayer = new ol.layer.Vector({source: new ol.source.Vector({ wrapX: false }) });
+// Define style for the TAZ vector layer, and set that layers's style to it
+function myTazLayerStyle(feature, resolution) {
+	return new ol.style.Style({ fill	: new ol.style.Fill({ color: 'rgba(193,66,66,0.4)' }), 
+                                stroke : new ol.style.Stroke({ color: 'rgba(0,0,255,1.0)', width: 3.0})
+				});
+}
+oTazLayer.setStyle(myTazLayerStyle);
 
 
 // Clear any information previously rendered about TAZ features;
 // and render the TAZes and data about them passed in the array aFeatures
 function renderTazData(aFeatures) {
+    var s, i;
+    
     // First, the tabular data
     $('#output_div').html('');
-    s = '';
     for (i = 0; i < aFeatures.length; i++) {
         props = aFeatures[i].getProperties();
         s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
     }
     $('#output_div').html(s); 
+    
+    // Second, the spatial data
+    // *** Duplicated code here, I know. Done this way for simplicity during early development.
+    // *** To be re-factored.
+    //
+    // Get the source for the TAZ vector layer
+	var vSource = oTazLayer.getSource();
+	//Clear anything that might previously be in the vector layer
+    vSource.clear();
+    for (i = 0; i < aFeatures.length; i++) {
+        vSource.addFeature(aFeatures[i]);
+    }
+    // Set the source of the vector layer to the data accumulated in the loop
+	oTazLayer.setSource(vSource);
+    
+    // TBD: pan/zoom map to selected TAZes
 } // renderTazData()
 
 
@@ -211,6 +234,7 @@ function initialize() {
         ol_map = new ol.Map({ layers: [   mgis_basemap_layers['topo_features'],
                                                         mgis_basemap_layers['structures'],
                                                         mgis_basemap_layers['basemap_features'],
+                                                        oTazLayer,
                                                         vectorDrawingLayer
                                       ],
                                target: 'map',
