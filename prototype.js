@@ -35,7 +35,8 @@ var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg385
 
 
 // Vector layer for sketching spatial query polygon
-var vectorDrawingLayer = new ol.layer.Vector({ source:  new ol.source.Vector({wrapX: false}) });
+var vectorDrawingSource = new ol.source.Vector({wrapX: false});
+var vectorDrawingLayer = new ol.layer.Vector({ source:  vectorDrawingSource });
 
 // Vector layer for rendering TAZes
 // Needs to be visible to initialize() and renderTazData() functions:
@@ -121,6 +122,8 @@ function executeTabularQuery(whereClause) {
 function executeSpatialQuery(geometry) {
     // Placeholder for now
     console.log('Entered executeSpatialQuery.');
+    var _DEBUG_HOOK = 0;
+    
 } //executeSpatialQuery()
 
 // OpenLayers 'map' object:
@@ -259,7 +262,7 @@ function initialize() {
         var draw;
       
         function addInteraction() {
-            draw = new ol.interaction.Draw({ source: source, type: 'Polygon'  });
+            draw = new ol.interaction.Draw({ source: vectorDrawingSource, type: 'Polygon'  });
             draw.on('drawend', function (e) {
                 console.log('Edit sketch complete.');
                 var _DEBUG_HOOK = 0;
