@@ -133,6 +133,7 @@ function executeSpatialQuery(geometry) {
     var maxy = bbox[3];
 
     // Construct CQL "BBOX" filter to use in WFS request
+    // Note: The first parameter of the BBOX filer is the attribute containing the geographic data in the layer being queried.
     var cqlFilter = "BBOX(shape," + minx + "," + miny + "," + maxx + "," + maxy + ")";
     var szUrl = szWFSserverRoot + '?';
     szUrl += '&service=wfs';
