@@ -123,7 +123,48 @@ function executeSpatialQuery(geometry) {
     // Placeholder for now
     console.log('Entered executeSpatialQuery.');
     var _DEBUG_HOOK = 0;
+
+    // For starters, execute a BBBOX query rather than a full "intersects" query
+    var bbox = geometry.getExtent();
+    // The following code is just to make things explicit for newcomers:
+    var minx = bbox[0];
+    var miny = bbox[1];
+    var maxx = bbox[2];
+    var maxy = bbox[3];
+
+    // Construct CQL "BBOX" filter to use in WFS request
+    var cqlFilter = "BBOX(shape," + minx + "," + miny + "," + maxx + "," + maxy + ")";
+    var szUrl = szWFSserverRoot + '?';
+    szUrl += '&service=wfs';
+    szUrl += '&version=1.0.0';
+    szUrl += '&request=getfeature';
+    szUrl += '&typename='+demographics_layer;
+    szUrl += '&outputformat=json';
+    szUrl += '&cql_filter=' + cqlFilter;    
     
+     // DEBUG
+    // console.log(szUrl);
+        
+    $.ajax({ url		: szUrl,
+         type		: 'GET',
+         dataType	: 'json',
+         success	: 	function (data, textStatus, jqXHR) {	
+                                var reader, aFeatures = [], props = {}, i, s;
+                                reader = new ol.format.GeoJSON();
+                                aFeatures = reader.readFeatures(jqXHR.responseText);
+                                if (aFeatures.length === 0) {
+                                    alert('WFS request to get data from spatial query returned no features.');
+                                    return;
+                                }
+                                var _DEBUG_HOOK = 0;
+                                renderTazData(aFeatures);
+                            },
+        error       :   function (qXHR, textStatus, errorThrown ) {
+                            alert('WFS request to get data from spatial query failed.\n' +
+                                    'Status: ' + textStatus + '\n' +
+                                    'Error:  ' + errorThrown);
+                        } // error handler for WFS request
+    });   
 } //executeSpatialQuery()
 
 // OpenLayers 'map' object:
@@ -265,13 +306,9 @@ function initialize() {
             draw = new ol.interaction.Draw({ source: vectorDrawingSource, type: 'Polygon'  });
             draw.on('drawend', function (e) {
                 console.log('Edit sketch complete.');
-                var _DEBUG_HOOK = 0;
                 var currentFeature= e.feature;
-                var g = currentFeature.getGeometry();
-                var bbox = g.getExtent();
-                _DEBUG_HOOK = 1;
-                executeSpatialQuery(bbox);              
-                _DEBUG_HOOK = 2;
+                var geometry = currentFeature.getGeometry();
+                executeSpatialQuery(geometry);              
             });
             ol_map.addInteraction(draw);
         }
