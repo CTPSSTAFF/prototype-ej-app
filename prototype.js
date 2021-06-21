@@ -120,7 +120,7 @@ function executeTabularQuery(whereClause) {
 
 // Execute spatial BBOX query - separate function retained for reference
 function executeBboxlQuery(geometry) {
-    console.log('Entered executeBboxlQuery.');
+    console.log('Entered executeBboxQuery.');
 
     var bbox = geometry.getExtent();
     // The following code is just to make things explicit for newcomers:
@@ -150,35 +150,59 @@ function executeBboxlQuery(geometry) {
                                 reader = new ol.format.GeoJSON();
                                 aFeatures = reader.readFeatures(jqXHR.responseText);
                                 if (aFeatures.length === 0) {
-                                    alert('WFS request to get data from spatial query returned no features.');
+                                    alert('WFS request to get data from BBOX query returned no features.');
                                     return;
                                 }
                                 var _DEBUG_HOOK = 0;
                                 renderTazData(aFeatures);
                             },
         error       :   function (qXHR, textStatus, errorThrown ) {
-                            alert('WFS request to get data from spatial query failed.\n' +
+                            alert('WFS request to get data from BBOX query failed.\n' +
                                     'Status: ' + textStatus + '\n' +
                                     'Error:  ' + errorThrown);
                         } // error handler for WFS request
     });   
-} //executeSpatialQuery()
+} //executeBboxQuery()
 
 
 
 // Execute spatial intersects query
 function executeSpatialQuery(geometry) {
+    var cqlFilter, lrCount, wkt4poly, aCoords, i, tmp1, tmp2;
+    
     console.log('Entered executeSpatialQuery.');
     var _DEBUG_HOOK = 0;
 
-
     // Construct CQL "INTERSECTS" filter to use in WFS request
     // Note: The first parameter of the FILETER filer is the attribute containing the geographic data in the layer being queried.
-    var cqlFilter = "INTERSECTS(shape,"
+    cqlFilter = "INTERSECTS(shape,"
     
-    // *** TBD: Fill in the geometry of the polygon
-    
-    cqlFilter += "));
+    // Here, we construct a string containing the WKT format for the geometry of the polygon sketched by the user.
+    // Assumptions: (1) The feature sketched is a simple polygon, rather than a multipart polygon
+    //                    (2) The feature sketched contains no internal "rings", i.e., it consists of a single, simple linear ring
+    // In WKT format: (1) Each point is represented by its X and Y coordinates SEPARATED BY A SPACE
+    //                       (2) Points are DELIMITED BY A COMMA
+    //
+    lrCount = geometry.getLinearRingCount();
+    if (lrCount !== 1) {
+        alert("Sketched geometry contains more than one linear ring: NOT SUPPORTED.\nExiting");
+        return;
+    }
+        
+    wkt4poly = "POLYGON((";
+    // Fill in the geometry of the polygon in WKT format
+    tmp1 = geometry.getCoordinates();
+    // Since we have only one linear ring, there is only one array of coordinates:
+    aCoords = tmp1[0];
+    for (i = 0; i < aCoords.length; i++) {
+        tmp2 = aCoords[i][0] + " " + aCoords[i][1];
+        if (i < aCoords.length -1) {
+            tmp2 += ", ";
+        }
+        wkt4poly += tmp2;
+    }
+    cqlFilter += wkt4poly + "))"; // These parens close the WKT for the polygon geometry
+    cqlFilter += ")"; // This paren closes the CQL INTERSECTS filter
     
     var szUrl = szWFSserverRoot + '?';
     szUrl += '&service=wfs';
