@@ -2,19 +2,6 @@
 //
 // Author: Ben Krepp (bkrepp@ctps.org)
 
-// SRS of MassGIS basemap: EPSG:3857, a.k.a. SR-ORG:6864
-proj4.defs("SR-ORG:6864", "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
-var epsg3857_proj = proj4('EPSG:3857');
-
-// SRS of MassGIS data (Mass State Plane, NAD 83, meters)
-proj4.defs("EPSG:26986", "+proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs");
-var epsg26986_proj = proj4('EPSG:26986');
-
-// WGS84 SRS
-proj4.defs("EPSG:4326", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
-var wgs_srs = proj4("EPSG:4326");
-
-
 // URLs for MassGIS basemap layer services
 var mgis_serviceUrls = { 
     'topo_features'     :  "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/MassGIS_Topographic_Features_for_Basemap/MapServer",
@@ -25,9 +12,9 @@ var mgis_serviceUrls = {
 
 // OpenLayers layers for MassGIS basemap layers used in our map
 var mgis_basemap_layers = { 'topo_features'     : null,     // bottom layer
-                            'structures'        : null,     
-                            'basemap_features'  : null,     // on top of 'structures' so labels aren't obscured
-                            'parcels'           : null      // unused; not populated
+                                         'structures'        : null,     
+                                         'basemap_features'  : null,     // on top of 'structures' so labels aren't obscured
+                                         'parcels'           : null      // unused; not populated
 };
 
 
@@ -47,22 +34,34 @@ var szWFSserverRoot = szServerRoot + '/wfs';
 var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg3857';
 
 
-
 // Stuff for sketching vector polygon for spatial query
 var source = new ol.source.Vector({wrapX: false});
-
+// Vector layer to draw TAZes on the map.
+// Needs to be visible to initialize() and renderTazData() functions:
 var vectorDrawingLayer = new ol.layer.Vector({
   source: source,
 });
 
 
+// Clear any information previously rendered about TAZ features;
+// and render the TAZes and data about them passed in the array aFeatures
+function renderTazData(aFeatures) {
+    // First, the tabular data
+    $('#output_div').html('');
+    s = '';
+    for (i = 0; i < aFeatures.length; i++) {
+        props = aFeatures[i].getProperties();
+        s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
+    }
+    $('#output_div').html(s); 
+} // renderTazData()
+
 
 // Execute purely tabular SQL query code
 function executeTabularQuery(whereClause) {
-    console.log('Entered execute spatial query.');
     //
     // Submit WFS request via AJAX
-    var cqlFilter = "(town_id='" +  "10')";      // *** HARDWIRED FOR INITIAL TESTING ***
+    var cqlFilter = whereClause;  
 	var szUrl = szWFSserverRoot + '?';
     szUrl += '&service=wfs';
     szUrl += '&version=1.0.0';
@@ -70,9 +69,8 @@ function executeTabularQuery(whereClause) {
     szUrl += '&typename='+demographics_layer;
     szUrl += '&outputformat=json';
     szUrl += '&cql_filter=' + cqlFilter;
-    
     // DEBUG
-    console.log(szUrl);
+    // console.log(szUrl);
         
     $.ajax({ url		: szUrl,
          type		: 'GET',
@@ -86,22 +84,7 @@ function executeTabularQuery(whereClause) {
                                     return;
                                 }
                                 var _DEBUG_HOOK = 0;
-                                // 
-                                // Do stuff...
-                                // props = aFeatures[0].getProperties();
-                                // 
-                                // We center the map on the feature.
-                                // ol_map.getView().fit(aFeatures[0].getGeometry(), ol_map.getSize());
-                                //
-                                // ... and populate output div.
-                                //
-                                $('#output_div').html('');
-                                s = '';
-                                for (i = 0; i < aFeatures.length; i++) {
-                                    props = aFeatures[i].getProperties();
-                                    s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
-                                }
-                                $('#output_div').html(s);
+                                renderTazData(aFeatures);
                             },
         error       :   function (qXHR, textStatus, errorThrown ) {
                             alert('WFS request to get data from tabular query failed.\n' +
@@ -234,11 +217,6 @@ function initialize() {
                                view:   new ol.View({ center: ol.proj.fromLonLat([-71.0589, 42.3601]), zoom: 11 })
                             });     
 
-         console.log('Initialization complete.');
-         
-         // Execute a simple tabular SQL query of the underlying data.
-         executeTabularQuery("town='ARLINGTON'");
-         
          // Initialize combo box of towns
          var i;
          for (i = 0; i < aMpoTowns.length; i++) {
@@ -248,8 +226,8 @@ function initialize() {
         }
         // Arm on-change event handler for combo box
         $('#select_town').on('change', function(e) {
-             var town_name = $('#select_town').find(":selected").text();
-             var query_string = "town='" + town_name + "'";
+             var town_id = $('#select_town').find(":selected").val();
+             var query_string = "town_id=" + town_id;
              executeTabularQuery(query_string);
         });
          
@@ -265,9 +243,6 @@ function initialize() {
                 var g = currentFeature.getGeometry();
                 var bbox = g.getExtent();
                 _DEBUG_HOOK = 1;
-                // Attempts to project from EPSG:3857 to EPSG:26986 using the proj4 library thus far haven't worked.
-                // Instead, we will attempt to query against a copy of the sample TAZ demographics data layer that was projected to EPSG:3857 using ArcMap.
-                // Execute spatial query
                 executeSpatialQuery(bbox);              
                 _DEBUG_HOOK = 2;
             });
