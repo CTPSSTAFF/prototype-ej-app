@@ -118,13 +118,10 @@ function executeTabularQuery(whereClause) {
     });
 } // executeTabularQuery()
 
-// Execute spatial (or at the very least BBOX) query
-function executeSpatialQuery(geometry) {
-    // Placeholder for now
-    console.log('Entered executeSpatialQuery.');
-    var _DEBUG_HOOK = 0;
+// Execute spatial BBOX query - separate function retained for reference
+function executeBboxlQuery(geometry) {
+    console.log('Entered executeBboxlQuery.');
 
-    // For starters, execute a BBBOX query rather than a full "intersects" query
     var bbox = geometry.getExtent();
     // The following code is just to make things explicit for newcomers:
     var minx = bbox[0];
@@ -135,6 +132,54 @@ function executeSpatialQuery(geometry) {
     // Construct CQL "BBOX" filter to use in WFS request
     // Note: The first parameter of the BBOX filer is the attribute containing the geographic data in the layer being queried.
     var cqlFilter = "BBOX(shape," + minx + "," + miny + "," + maxx + "," + maxy + ")";
+    var szUrl = szWFSserverRoot + '?';
+    szUrl += '&service=wfs';
+    szUrl += '&version=1.0.0';
+    szUrl += '&request=getfeature';
+    szUrl += '&typename='+demographics_layer;
+    szUrl += '&outputformat=json';
+    szUrl += '&cql_filter=' + cqlFilter;    
+     // DEBUG
+    // console.log(szUrl);
+        
+    $.ajax({ url		: szUrl,
+         type		: 'GET',
+         dataType	: 'json',
+         success	: 	function (data, textStatus, jqXHR) {	
+                                var reader, aFeatures = [], props = {}, i, s;
+                                reader = new ol.format.GeoJSON();
+                                aFeatures = reader.readFeatures(jqXHR.responseText);
+                                if (aFeatures.length === 0) {
+                                    alert('WFS request to get data from spatial query returned no features.');
+                                    return;
+                                }
+                                var _DEBUG_HOOK = 0;
+                                renderTazData(aFeatures);
+                            },
+        error       :   function (qXHR, textStatus, errorThrown ) {
+                            alert('WFS request to get data from spatial query failed.\n' +
+                                    'Status: ' + textStatus + '\n' +
+                                    'Error:  ' + errorThrown);
+                        } // error handler for WFS request
+    });   
+} //executeSpatialQuery()
+
+
+
+// Execute spatial intersects query
+function executeSpatialQuery(geometry) {
+    console.log('Entered executeSpatialQuery.');
+    var _DEBUG_HOOK = 0;
+
+
+    // Construct CQL "INTERSECTS" filter to use in WFS request
+    // Note: The first parameter of the FILETER filer is the attribute containing the geographic data in the layer being queried.
+    var cqlFilter = "INTERSECTS(shape,"
+    
+    // *** TBD: Fill in the geometry of the polygon
+    
+    cqlFilter += "));
+    
     var szUrl = szWFSserverRoot + '?';
     szUrl += '&service=wfs';
     szUrl += '&version=1.0.0';
