@@ -314,117 +314,99 @@ function initialize() {
     // 1. Initialize OpenLayers map, gets MassGIS basemap service properties by executing AJAX request
     $.ajax({ url: mgis_serviceUrls['topo_features'], jsonp: 'callback', dataType: 'jsonp', data: { f: 'json' }, 
              success: function(config) {     
-        // Body of "success" handler starts here.
-        // Get resolutions
-        var tileInfo = config.tileInfo;
-        var resolutions = [];
-        for (var i = 0, ii = tileInfo.lods.length; i < ii; ++i) {
-            resolutions.push(tileInfo.lods[i].resolution);
-        }               
-        // Get projection
-        var epsg = 'EPSG:' + config.spatialReference.wkid;
-        var units = config.units === 'esriMeters' ? 'm' : 'degrees';
-        var projection = ol.proj.get(epsg) ? ol.proj.get(epsg) : new ol.proj.Projection({ code: epsg, units: units });                              
-        // Get attribution
-        var attribution = new ol.control.Attribution({ html: config.copyrightText });               
-        // Get full extent
-        var fullExtent = [config.fullExtent.xmin, config.fullExtent.ymin, config.fullExtent.xmax, config.fullExtent.ymax];
-        
-        var tileInfo = config.tileInfo;
-        var tileSize = [tileInfo.width || tileInfo.cols, tileInfo.height || tileInfo.rows];
-        var tileOrigin = [tileInfo.origin.x, tileInfo.origin.y];
-        var urls;
-        var suffix = '/tile/{z}/{y}/{x}';
-        urls = [mgis_serviceUrls['topo_features'] += suffix];               
-        var width = tileSize[0] * resolutions[0];
-        var height = tileSize[1] * resolutions[0];     
-        var tileUrlFunction, extent, tileGrid;               
-        if (projection.getCode() === 'EPSG:4326') {
-            tileUrlFunction = function tileUrlFunction(tileCoord) {
-                var url = urls.length === 1 ? urls[0] : urls[Math.floor(Math.random() * (urls.length - 0 + 1)) + 0];
-                return url.replace('{z}', (tileCoord[0] - 1).toString()).replace('{x}', tileCoord[1].toString()).replace('{y}', (-tileCoord[2] - 1).toString());
-            };
-        } else {
-            extent = [tileOrigin[0], tileOrigin[1] - height, tileOrigin[0] + width, tileOrigin[1]];
-            tileGrid = new ol.tilegrid.TileGrid({ origin: tileOrigin, extent: extent, resolutions: resolutions });
-        }     
+                // Body of "success" handler starts here.
+                // Get resolutions
+                var tileInfo = config.tileInfo;
+                var resolutions = [];
+                for (var i = 0, ii = tileInfo.lods.length; i < ii; ++i) {
+                    resolutions.push(tileInfo.lods[i].resolution);
+                }               
+                // Get projection
+                var epsg = 'EPSG:' + config.spatialReference.wkid;
+                var units = config.units === 'esriMeters' ? 'm' : 'degrees';
+                var projection = ol.proj.get(epsg) ? ol.proj.get(epsg) : new ol.proj.Projection({ code: epsg, units: units });                              
+                // Get attribution
+                var attribution = new ol.control.Attribution({ html: config.copyrightText });               
+                // Get full extent
+                var fullExtent = [config.fullExtent.xmin, config.fullExtent.ymin, config.fullExtent.xmax, config.fullExtent.ymax];
+                
+                var tileInfo = config.tileInfo;
+                var tileSize = [tileInfo.width || tileInfo.cols, tileInfo.height || tileInfo.rows];
+                var tileOrigin = [tileInfo.origin.x, tileInfo.origin.y];
+                var urls;
+                var suffix = '/tile/{z}/{y}/{x}';
+                urls = [mgis_serviceUrls['topo_features'] += suffix];               
+                var width = tileSize[0] * resolutions[0];
+                var height = tileSize[1] * resolutions[0];     
+                var tileUrlFunction, extent, tileGrid;               
+                if (projection.getCode() === 'EPSG:4326') {
+                    tileUrlFunction = function tileUrlFunction(tileCoord) {
+                        var url = urls.length === 1 ? urls[0] : urls[Math.floor(Math.random() * (urls.length - 0 + 1)) + 0];
+                        return url.replace('{z}', (tileCoord[0] - 1).toString()).replace('{x}', tileCoord[1].toString()).replace('{y}', (-tileCoord[2] - 1).toString());
+                    };
+                } else {
+                    extent = [tileOrigin[0], tileOrigin[1] - height, tileOrigin[0] + width, tileOrigin[1]];
+                    tileGrid = new ol.tilegrid.TileGrid({ origin: tileOrigin, extent: extent, resolutions: resolutions });
+                }     
 
-        // Layer 1 - topographic features
-        var layerSource;
-        layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
-                                          tileSize: tileSize, tileGrid: tileGrid,
-                                          tileUrlFunction: tileUrlFunction, urls: urls });
-                          
-        mgis_basemap_layers['topo_features'] = new ol.layer.Tile();
-        mgis_basemap_layers['topo_features'].setSource(layerSource);
-        mgis_basemap_layers['topo_features'].setVisible(true);
-        
-        // We make the rash assumption that since this set of tiled basemap layers were designed to overlay one another,
-        // their projection, extent, and resolutions are the same.
-        
-         // Layer 2 - structures
-        urls = [mgis_serviceUrls['structures'] += suffix];  
-        layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
-                                          tileSize: tileSize, tileGrid: tileGrid,
-                                          tileUrlFunction: tileUrlFunction, urls: urls });;
-        mgis_basemap_layers['structures'] = new ol.layer.Tile();
-        mgis_basemap_layers['structures'].setSource(layerSource); 
-        mgis_basemap_layers['structures'].setVisible(true);          
-        
-        // Layer 3 - "detailed" features - these include labels
-        urls = [mgis_serviceUrls['basemap_features'] += suffix];  
-        layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
-                                          tileSize: tileSize, tileGrid: tileGrid,
-                                          tileUrlFunction: tileUrlFunction, urls: urls });                                  
-        mgis_basemap_layers['basemap_features'] = new ol.layer.Tile();
-        mgis_basemap_layers['basemap_features'].setSource(layerSource);
-        mgis_basemap_layers['basemap_features'].setVisible(true);
+                // Layer 1 - topographic features
+                var layerSource;
+                layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
+                                                  tileSize: tileSize, tileGrid: tileGrid,
+                                                  tileUrlFunction: tileUrlFunction, urls: urls });
+                                  
+                mgis_basemap_layers['topo_features'] = new ol.layer.Tile();
+                mgis_basemap_layers['topo_features'].setSource(layerSource);
+                mgis_basemap_layers['topo_features'].setVisible(true);
+                
+                // We make the rash assumption that since this set of tiled basemap layers were designed to overlay one another,
+                // their projection, extent, and resolutions are the same.
+                
+                 // Layer 2 - structures
+                urls = [mgis_serviceUrls['structures'] += suffix];  
+                layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
+                                                  tileSize: tileSize, tileGrid: tileGrid,
+                                                  tileUrlFunction: tileUrlFunction, urls: urls });;
+                mgis_basemap_layers['structures'] = new ol.layer.Tile();
+                mgis_basemap_layers['structures'].setSource(layerSource); 
+                mgis_basemap_layers['structures'].setVisible(true);          
+                
+                // Layer 3 - "detailed" features - these include labels
+                urls = [mgis_serviceUrls['basemap_features'] += suffix];  
+                layerSource = new ol.source.XYZ({ attributions: [attribution], projection: projection,
+                                                  tileSize: tileSize, tileGrid: tileGrid,
+                                                  tileUrlFunction: tileUrlFunction, urls: urls });                                  
+                mgis_basemap_layers['basemap_features'] = new ol.layer.Tile();
+                mgis_basemap_layers['basemap_features'].setSource(layerSource);
+                mgis_basemap_layers['basemap_features'].setVisible(true);
 
-        // Create OpenLayers map
-        ol_map = new ol.Map({ layers: [   mgis_basemap_layers['topo_features'],
-                                                        mgis_basemap_layers['structures'],
-                                                        mgis_basemap_layers['basemap_features'],
-                                                        oTazLayer,
-                                                        vectorDrawingLayer
-                                      ],
-                               target: 'map',
-                               view:   new ol.View({ center: ol.proj.fromLonLat([-71.0589, 42.3601]), zoom: 11 })
-                            });     
+                // Create OpenLayers map
+                ol_map = new ol.Map({ layers: [   mgis_basemap_layers['topo_features'],
+                                                                mgis_basemap_layers['structures'],
+                                                                mgis_basemap_layers['basemap_features'],
+                                                                oTazLayer,
+                                                                vectorDrawingLayer
+                                              ],
+                                       target: 'map',
+                                       view:   new ol.View({ center: ol.proj.fromLonLat([-71.0589, 42.3601]), zoom: 11 })
+                                    });     
 
-         // Initialize combo box of towns
-         var i;
-         for (i = 0; i < aMpoTowns.length; i++) {
-             $('#select_town').append($('<option>', { value: aMpoTowns[i][0],     
-                                                                      text : aMpoTowns[i][1] }));  
-            
-        }
-        // Arm on-change event handler for combo box
-        $('#select_town').on('change', function(e) {
-             var town_id = $('#select_town').find(":selected").val();
-             var query_string = "town_id=" + town_id;
-             executeTabularQuery(query_string);
-        });
-         
-/*
-         // Beginning of stuff for spatial query driven by sketch
-        var draw;
-        function addInteraction() {
-            draw = new ol.interaction.Draw({ source: vectorDrawingSource, type: 'Polygon'  });
-            draw.on('drawend', function (e) {
-                console.log('Edit sketch complete.');
-                var currentFeature= e.feature;
-                var geometry = currentFeature.getGeometry();
-                executeSpatialQuery(geometry);              
-            });
-            ol_map.addInteraction(draw);
-        }
-        addInteraction();
-*/
-
-    // Arm event handler for "sketch" button
-    $('#sketch_button').on('click', sketchHandler);
-
-               
-    }});
-
+                 // Initialize combo box of towns
+                 var i;
+                 for (i = 0; i < aMpoTowns.length; i++) {
+                     $('#select_town').append($('<option>', { value: aMpoTowns[i][0],     
+                                                                              text : aMpoTowns[i][1] }));  
+                    
+                }
+                // Arm on-change event handler for combo box
+                $('#select_town').on('change', function(e) {
+                     var town_id = $('#select_town').find(":selected").val();
+                     var query_string = "town_id=" + town_id;
+                     executeTabularQuery(query_string);
+                });
+                 
+                // Arm event handler for "sketch" button
+                $('#sketch_button').on('click', sketchHandler);
+        } // end of 'success' handler for AJAX request
+    }); // end of AJAZ request
 } // initialize()
