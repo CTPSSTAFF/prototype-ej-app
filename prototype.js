@@ -78,16 +78,8 @@ function renderTazData(aFeatures) {
 	oTazLayer.setSource(vSource);
     
     // Pan/zoom map to the extent of the selected TAZes
-/*
-    var view = ol_map.getView();
-    var extent = oTazLayer.getSource().getExtent();
-    view.fitExtent(extent, ol_map.getSize());
-*/
-    
-    // New code.
     var extent = oTazLayer.getSource().getExtent();
     ol_map.getView().fit(extent, ol_map.getSize());
-    
 } // renderTazData()
 
 
