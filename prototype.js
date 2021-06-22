@@ -68,9 +68,19 @@ function addInteraction() {
     ol_map.addInteraction(draw);
 } // addInteraction()
 //
-// Event handler for "sketch" button
-// *** Currently in-line in the initialize function. To be moved.
-
+// Event handler for "sketch" button - this is armed in the initialize() function
+//
+function sketchHandler(e) {
+    var _DEBUG_HOOK = 0;
+    if (sketching === false) {
+        addInteraction();
+        sketching = true;
+    } else {
+        // Should not get here - but just in case
+       sketching = false;   
+       return;        
+    }
+} // sketchHandler()
 
 
 
@@ -411,19 +421,9 @@ function initialize() {
         addInteraction();
 */
 
-    // Event handler for "sketch" button
-    //
-    $('#sketch_button').on('click', function(e) {
-        var _DEBUG_HOOK = 0;
-        if (sketching === false) {
-            addInteraction();
-            sketching = true;
-        } else {
-            // Should not get here - but just in case
-           sketching = false;   
-           return;        
-        }
-    }); 
+    // Arm event handler for "sketch" button
+    $('#sketch_button').on('click', sketchHandler);
+
                
     }});
 
