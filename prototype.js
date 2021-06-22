@@ -67,7 +67,6 @@ function addInteraction() {
     });
     ol_map.addInteraction(draw);
 } // addInteraction()
-/*
 //
 // Event handler for "sketch" button
 // *** Currently in-line in the initialize function. To be moved.
