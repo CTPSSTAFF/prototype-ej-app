@@ -50,6 +50,31 @@ function myTazLayerStyle(feature, resolution) {
 oTazLayer.setStyle(myTazLayerStyle);
 
 
+// Machinery to support "sketch" functionality
+//
+var sketching = false;
+var draw;
+function addInteraction() {
+    draw = new ol.interaction.Draw({ source: vectorDrawingSource, type: 'Polygon'  });
+    draw.on('drawend', function (e) {
+        console.log('Edit sketch complete.');
+        var currentFeature= e.feature;
+        var geometry = currentFeature.getGeometry();
+        executeSpatialQuery(geometry);        
+        // Remove the interaction after the sketch has completed
+        ol_map.removeInteraction(draw);    
+        sketching = false;        
+    });
+    ol_map.addInteraction(draw);
+} // addInteraction()
+/*
+//
+// Event handler for "sketch" button
+// *** Currently in-line in the initialize function. To be moved.
+
+
+
+
 // Clear any information previously rendered about TAZ features;
 // and render the TAZes and data about them passed in the array aFeatures
 function renderTazData(aFeatures) {
@@ -120,7 +145,8 @@ function executeTabularQuery(whereClause) {
     });
 } // executeTabularQuery()
 
-// Execute spatial BBOX query - separate function retained for reference
+// Execute spatial BBOX query
+// This function is no longer used, but has been retained for reference by newbies.
 function executeBboxlQuery(geometry) {
     console.log('Entered executeBboxQuery.');
 
@@ -165,7 +191,6 @@ function executeBboxlQuery(geometry) {
                         } // error handler for WFS request
     });   
 } //executeBboxQuery()
-
 
 
 // Execute spatial intersects query
@@ -371,9 +396,9 @@ function initialize() {
              executeTabularQuery(query_string);
         });
          
+/*
          // Beginning of stuff for spatial query driven by sketch
         var draw;
-      
         function addInteraction() {
             draw = new ol.interaction.Draw({ source: vectorDrawingSource, type: 'Polygon'  });
             draw.on('drawend', function (e) {
@@ -384,8 +409,22 @@ function initialize() {
             });
             ol_map.addInteraction(draw);
         }
-        
         addInteraction();
+*/
+
+    // Event handler for "sketch" button
+    //
+    $('#sketch_button').on('click', function(e) {
+        var _DEBUG_HOOK = 0;
+        if (sketching === false) {
+            addInteraction();
+            sketching = true;
+        } else {
+            // Should not get here - but just in case
+           sketching = false;   
+           return;        
+        }
+    }); 
                
     }});
 
