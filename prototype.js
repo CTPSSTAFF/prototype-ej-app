@@ -64,8 +64,8 @@ function renderTazData(aFeatures) {
     $('#output_div').html(s); 
     
     // Second, the spatial data
-    // *** Duplicated code here, I know. Done this way for simplicity during early development.
-    // *** To be re-factored.
+    // *** Duplicated code here, I know. Done this way for simplicity during development.
+    // *** To be re-factored, when time permits.
     //
     // Get the source for the TAZ vector layer
 	var vSource = oTazLayer.getSource();
@@ -77,7 +77,17 @@ function renderTazData(aFeatures) {
     // Set the source of the vector layer to the data accumulated in the loop
 	oTazLayer.setSource(vSource);
     
-    // TBD: pan/zoom map to selected TAZes
+    // Pan/zoom map to the extent of the selected TAZes
+/*
+    var view = ol_map.getView();
+    var extent = oTazLayer.getSource().getExtent();
+    view.fitExtent(extent, ol_map.getSize());
+*/
+    
+    // New code.
+    var extent = oTazLayer.getSource().getExtent();
+    ol_map.getView().fit(extent, ol_map.getSize());
+    
 } // renderTazData()
 
 
