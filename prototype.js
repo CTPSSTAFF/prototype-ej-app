@@ -60,7 +60,10 @@ function addInteraction() {
         console.log('Edit sketch complete.');
         var currentFeature= e.feature;
         var geometry = currentFeature.getGeometry();
-        executeSpatialQuery(geometry);        
+        executeSpatialQuery(geometry);  
+        // Clear the sektched feature from the vector drawing layer:
+        // We don't want this rendered on the map after sketching has completed
+        vectorDrawingLayer.removeFeature(currentFeature);
         // Remove the interaction after the sketch has completed
         ol_map.removeInteraction(draw);    
         sketching = false;        
@@ -103,7 +106,7 @@ function renderTazData(aFeatures) {
     //
     // Get the source for the TAZ vector layer
 	var vSource = oTazLayer.getSource();
-	//Clear anything that might previously be in the vector layer
+	// Clear anything that might previously be in the vector layer
     vSource.clear();
     for (i = 0; i < aFeatures.length; i++) {
         vSource.addFeature(aFeatures[i]);
