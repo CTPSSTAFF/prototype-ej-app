@@ -63,7 +63,8 @@ function addInteraction() {
         executeSpatialQuery(geometry);  
         // Clear the sektched feature from the vector drawing layer:
         // We don't want this rendered on the map after sketching has completed
-        vectorDrawingLayer.removeFeature(currentFeature);
+        var src = vectorDrawingLayer.getSource();
+        src.clear();
         // Remove the interaction after the sketch has completed
         ol_map.removeInteraction(draw);    
         sketching = false;        
@@ -86,9 +87,17 @@ function sketchHandler(e) {
 } // sketchHandler()
 
 
+// Event handler for "clear TAZes" button
+// Clears vector layer of selected TAZes from map and clears output div.
+function clearTazLayer(e) {
+ 	var vSource = oTazLayer.getSource();
+    vSource.clear();  
+    $('#output_div').html('');
+} // clearTazLayer()
 
-// Clear any information previously rendered about TAZ features;
-// and render the TAZes and data about them passed in the array aFeatures
+// Render the TAZes and data about them passed in the array aFeatures,
+// first clearing any previously rendered about TAZ features from the map and the output div.
+//
 function renderTazData(aFeatures) {
     var s, i;
     
@@ -410,6 +419,9 @@ function initialize() {
                  
                 // Arm event handler for "sketch" button
                 $('#sketch_button').on('click', sketchHandler);
+                
+                // Arm event handler to clear vector layer of selected TAZes
+                $('#clear_tazes').on('click', clearTazLayer);
         } // end of 'success' handler for AJAX request
     }); // end of AJAZ request
 } // initialize()
