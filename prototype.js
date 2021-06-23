@@ -18,7 +18,7 @@ var mgis_basemap_layers = { 'topo_features'     : null,     // bottom layer
 };
 
 
-// Varioius things for CTPS-hosted WMS and WFS layers
+// Varioius things for accessing all CTPS-hosted WMS and WFS layers
 // First, folderol to allow the app to run on appsrvr3 as well as "in the wild"
 var szServerRoot = location.protocol + '//' + location.hostname;
 var nameSpace;
@@ -31,6 +31,7 @@ if (location.hostname.includes('appsrvr3')) {
 }
 var szWMSserverRoot = szServerRoot + '/wms'; 
 var szWFSserverRoot = szServerRoot + '/wfs'; 
+// CTPS-hosted sample TAZ demographics layer, SRS = EPSG:3857
 var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg3857';
 
 
@@ -38,13 +39,68 @@ var demographics_layer = nameSpace + ':' + 'ctps_sample_taz_demographics_epsg385
 var vectorDrawingSource = new ol.source.Vector({wrapX: false});
 var vectorDrawingLayer = new ol.layer.Vector({ source:  vectorDrawingSource });
 
+
+// Max map resolution at which to label TAZ vector features.
+var maxResolutionForLabelingVectorFeatures = 1200;   
+// Our function to return text to label TAZ vector features
+//
+// Unabashedly borrowed from https://openlayers.org/en/latest/examples/vector-labels.html,
+// and subsequently morphed for our purposes.
+//
+var getText = function(feature, resolution) {
+  var maxResolution = maxResolutionForLabelingVectorFeatures;
+  var text = "TAZ " + String(feature.get('taz'));
+  if (resolution > maxResolution) {
+    text = '';
+  }
+  return text;
+};
+// Our createTextStyle function for labeling the TAZ vector layer
+//
+// Unabashedly borrowed from https://openlayers.org/en/latest/examples/vector-labels.html,
+// and subsequently morphed for our purposes.
+//
+var createTextStyle = function(feature, resolution) {
+  var align = 'center';
+  var baseline = 'middle';
+  var size = '14px';
+  var height = 1;
+  var offsetX = 0;
+  var offsetY = 0;
+  var weight = 'normal';
+  var placement = 'point';
+  var maxAngle = 45;
+  var overflow = 'true'; 
+  var rotation = 0;
+  var font = weight + ' ' + size + '/' + height + ' ' + 'Arial';
+  var fillColor = 'black';      // Color of label TEXT itself
+  var outlineColor = 'white';   // Color of label OUTLINE
+  var outlineWidth = 0;
+
+  return new ol.style.Text({
+    textAlign: align,
+    textBaseline: baseline,
+    font: font,
+    text: getText(feature, resolution),
+    fill: new ol.style.Fill({color: fillColor}),
+    stroke: new ol.style.Stroke({color: outlineColor, width: outlineWidth}),
+    offsetX: offsetX,
+    offsetY: offsetY,
+    placement: placement,
+    maxAngle: maxAngle,
+    overflow: overflow,
+    rotation: rotation
+  });
+};
+
 // Vector layer for rendering TAZes
 // Needs to be visible to initialize() and renderTazData() functions:
 var oTazLayer = new ol.layer.Vector({source: new ol.source.Vector({ wrapX: false }) });
 // Define style for the TAZ vector layer, and set that layers's style to it
 function myTazLayerStyle(feature, resolution) {
 	return new ol.style.Style({ fill	: new ol.style.Fill({ color: 'rgba(193,66,66,0.4)' }), 
-                                stroke : new ol.style.Stroke({ color: 'rgba(0,0,255,1.0)', width: 3.0})
+                                          stroke : new ol.style.Stroke({ color: 'rgba(0,0,255,1.0)', width: 3.0}),
+                                          text:   createTextStyle(feature, resolution)
 				});
 }
 oTazLayer.setStyle(myTazLayerStyle);
