@@ -466,18 +466,53 @@ function initialize() {
                                                                               text : aMpoTowns[i][1] }));  
                     
                 }
-                // Arm on-change event handler for combo box
+                
+                // Arm event handlers for UI controls:
+                //
+                // Arm on-click event handler for "reset map" button
+                $('#reset_map').on('click', function(e) {
+                    // Clear TAZ vector layer and output_div
+                    var vSource = oTazLayer.getSource();
+                    vSource.clear();  
+                    $('#output_div').html('');
+                    // Clear the "sketch" vector layer 
+                    vSource = vectorDrawingLayer.getSource();
+                    vSource.clear();
+                    // Set the map view to it's initial view
+                    var view = new ol.View({ center: ol.proj.fromLonLat([-71.0589, 42.3601]), zoom: 11 });
+                    ol_map.setView(view);
+                });
+                
+                // Arm on-change event handler for "select town" combo box
                 $('#select_town').on('change', function(e) {
                      var town_id = $('#select_town').find(":selected").val();
                      var query_string = "town_id=" + town_id;
                      executeTabularQuery(query_string);
                 });
                  
-                // Arm event handler for "sketch" button
+                // Arm on-click event handler for "sketch" button
                 $('#sketch_button').on('click', sketchHandler);
                 
-                // Arm event handler to clear vector layer of selected TAZes
+                // Arm on-click event handler to clear vector layer of selected TAZes
                 $('#clear_tazes').on('click', clearTazLayer);
-        } // end of 'success' handler for AJAX request
+                
+                // Arm on-click event handler for "download data" button
+                $('#download_data').on('click', function(e) {
+                    alert("Implementation of 'download data' functionality is currently TBD.");
+                });
+                
+                // Arm on-click event handler for "help" button
+                //
+                function popup(url) {
+		            var popupWindow = window.open(url,
+                                                                    'popUpWindow','height=700,width=800,left=10,top=10,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no,status=yes');
+	            } // popup()
+               $('#help_button').on('click', function(e) {
+                    popup("ejAppHelp.html");  
+               });
+            }, // end of 'success' handler for AJAX request
+     error: function()  {
+                alert("Error during initialization: Error return from AJAX request to get MassGIS base map properties.\nApplication exiting.");
+            }  // end of 'error' handler for AJAX request
     }); // end of AJAZ request
 } // initialize()
