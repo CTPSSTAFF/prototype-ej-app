@@ -42,22 +42,36 @@
         
         <h2>Prototype EJ App</h2>
         <span>
-                Select an MPO Town:&nbsp;
                 <select id="select_town">
                     <option value="0">Select all TAZes in a municipality</option>
                 </select>
-                &nbsp;
                 <input id="sketch_button" type="button" value="Select TAZes by sketch">
-                &nbsp;
                 <input id="clear_tazes" type="button" value="Clear selected TAZes">
-                &nbsp;
                 <input id="reset_map" type="button" value="Reset map">
-                &nbsp;
                 <input id="download_data" type="button" value="Download data">
-                &nbsp;
+                
+               <span style="border:1">
+               <form style="display:inline-block; padding: 3px; border: 1.5px solid brown;">
+                    <input id="export-pdf" type="button" value="Export map to PDF">
+                    <label for="format">Page size </label>
+                    <select id="format">
+                        <option value="8d5_11"selected>8.5 x 11</option>
+                        <option value="a4">A4</option>
+                        <option value="11_17">11 x 17 (slow)</option>
+                    </select>
+                    <label for="resolution">Resolution </label>
+                    <select id="resolution">
+                        <option value="72">72 dpi (fast)</option>
+                        <option value="150">150 dpi</option>
+                        <option value="300">300 dpi (slow)</option>
+                    </select>
+                </form>
+
+                </span>
+   
                 <input id="help_button" type="button" value="Help">
          </span>
-        <h3>Map</h3>
+         
         <div id="map" class="map"></div>
         <h3>Output Area</h3>
         <div id="output_div"></div>
