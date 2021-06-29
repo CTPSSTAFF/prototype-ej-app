@@ -40,7 +40,11 @@
 /* Rules for OpenLayers map */
 .map {
     height: 700px;
-    width: 100%;  
+    width: 100%;
+    margin-top: 5px;    
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom:5px;
 }
 
 /* Hide OpenLayers Attribution on map */
@@ -51,4 +55,11 @@
 /* In case we use jQueryUI, the following overrides jQueryUI ui-widget class size of "1.2em" */
 .ui-widget {
 	font-size: 12px;
+}
+
+/* Form for printing map */
+#print_form {
+    display:inline-block; 
+    padding: 3px; 
+    border: 1.5px solid brown;
 }
