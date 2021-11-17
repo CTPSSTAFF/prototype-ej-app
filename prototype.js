@@ -159,9 +159,10 @@ function renderTazData(aFeatures) {
     
     // First, the tabular data
     $('#output_div').html('');
+	s = '';
     for (i = 0; i < aFeatures.length; i++) {
         props = aFeatures[i].getProperties();
-        s += 'TAZ = ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
+        s += 'TAZ ' + props.taz + ' 2010 population = ' + props.total_pop_2010 + ' 2016 population = ' + props.total_pop_2016 + '.' + '</br>' ;
     }
     $('#output_div').html(s); 
     
@@ -242,6 +243,7 @@ function executeBboxlQuery(geometry) {
     szUrl += '&version=1.0.0';
     szUrl += '&request=getfeature';
     szUrl += '&typename='+demographics_layer;
+	szUrl += '&srsname=EPSG:3857';  // NOTE: We reproject the native geometry of the feature to the SRS of the web map.
     szUrl += '&outputformat=json';
     szUrl += '&cql_filter=' + cqlFilter;    
      // DEBUG
